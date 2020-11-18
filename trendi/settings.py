@@ -12,12 +12,12 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 from pathlib import Path
 
-from . import my_settings
+import my_settings
 
 DATABASES = my_settings.DATABASES
 
 SECRET_KEY = my_settings.SECRET["secret"]
-
+ALGORITHM = my_settings.ALGORITHM['algorithm']
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -36,16 +36,31 @@ ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
-INSTALLED_APPS = [
+DJANGO_APPS = [
     # 'django.contrib.admin',
     # 'django.contrib.auth',
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "user",
+]
+
+THIRD_PARTY_APPS = [
     "corsheaders",
 ]
+
+PROJECT_APPS =[
+    "user",
+    "core",
+    "product",
+    "order",
+    "review",
+    "favor",
+]
+
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PROJECT_APPS
+
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -107,7 +122,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Seoul"
 
 USE_I18N = True
 
