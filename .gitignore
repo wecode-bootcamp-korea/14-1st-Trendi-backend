@@ -275,3 +275,8 @@ tags
 
 my_settings.py
 *.csv
+
+review/data.py
+
+data.py
+csv
