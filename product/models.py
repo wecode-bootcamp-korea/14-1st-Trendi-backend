@@ -21,10 +21,13 @@ class Product(core_models.TimeStampedModel):
         return self.title
 
 class ProductDetail(core_models.TimeStampedModel):
-    image_url   = models.URLField(max_length=1000)
+    image_url_1 = models.URLField(max_length=1000,null=True)
+    image_url_2 = models.URLField(max_length=1000,null=True)
+    image_url_3 = models.URLField(max_length=1000,null=True)
+    image_url_4 = models.URLField(max_length=1000,null=True)
+    image_url_5 = models.URLField(max_length=1000,null=True)
     description = models.CharField(max_length=500)
-    product     = models.ForeignKey('product.Product', on_delete=models.CASCADE)
-
+    
     class Meta:
         db_table = 'product_details'
 
