@@ -3,16 +3,17 @@ from django.db import models
 from core      import models as core_models
 
 class Product(core_models.TimeStampedModel):
-    title        = models.CharField(max_length=300)
-    thumb_image  = models.URLField(max_length=1000)
-    price        = models.IntegerField()
-    seller       = models.ForeignKey('user.Seller', on_delete=models.CASCADE)
-    delivery     = models.ForeignKey('product.Delivery', on_delete=models.CASCADE)
-    sale         = models.ForeignKey('product.Sale', on_delete=models.CASCADE, null=True)
-    category     = models.ForeignKey('product.Category', on_delete=models.CASCADE)
-    sub_category = models.ForeignKey('product.SubCategory', on_delete=models.CASCADE)
-    size         = models.ManyToManyField('product.Size', through = "ProductSize", related_name='sizes')
-    color        = models.ManyToManyField('product.Color', through = "ProductColor", related_name='colors')
+    title           = models.CharField(max_length=300)
+    thumb_image_url = models.URLField(max_length=1000)
+    price           = models.IntegerField()
+    description     = models.TextField(null=True)
+    seller          = models.ForeignKey('user.Seller', on_delete=models.CASCADE)
+    delivery        = models.ForeignKey('product.Delivery', on_delete=models.CASCADE)
+    sale            = models.ForeignKey('product.Sale', on_delete=models.CASCADE, null=True)
+    category        = models.ForeignKey('product.Category', on_delete=models.CASCADE)
+    sub_category    = models.ForeignKey('product.SubCategory', on_delete=models.CASCADE)
+    size            = models.ManyToManyField('product.Size', through = "ProductSize", related_name='sizes')
+    color           = models.ManyToManyField('product.Color', through = "ProductColor", related_name='colors')
 
     class Meta:
         db_table = 'products'
@@ -21,12 +22,8 @@ class Product(core_models.TimeStampedModel):
         return self.title
 
 class ProductDetail(core_models.TimeStampedModel):
-    image_url_1 = models.URLField(max_length=1000,null=True)
-    image_url_2 = models.URLField(max_length=1000,null=True)
-    image_url_3 = models.URLField(max_length=1000,null=True)
-    image_url_4 = models.URLField(max_length=1000,null=True)
-    image_url_5 = models.URLField(max_length=1000,null=True)
-    description = models.CharField(max_length=500)
+    detail_image_url  = models.URLField(max_length=1000, null=True)
+    product = models.ForeignKey('product.Product', on_delete=models.CASCADE)
     
     class Meta:
         db_table = 'product_details'
@@ -41,13 +38,13 @@ class Sale(models.Model):
         return self.sale_ratio
 
 class Delivery(models.Model):
-    delivery_code = models.IntegerField()
+    delivery_type = models.IntegerField()
 
     class Meta:
         db_table = 'deliveries'
 
     def __str__(self):
-        return self.delivery_code
+        return self.delivery_type
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
