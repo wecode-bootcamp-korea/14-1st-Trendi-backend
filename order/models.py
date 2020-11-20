@@ -10,9 +10,6 @@ class Order(core_models.TimeStampedModel):
     
     class Meta:
         db_table = 'orders'
-    
-    def __str__(self):
-        return self.number
 
 class OrderStatus(models.Model):
     status = models.IntegerField()

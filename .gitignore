@@ -280,3 +280,7 @@ review/data.py
 
 data.py
 csv
+
+.vscode
+
+.DS_Store
