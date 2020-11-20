@@ -43,10 +43,6 @@ class SignUpView(View):
         except KeyError:
             return JsonResponse({"MESSAGE" : "KEY_ERROR"}, status = 400)
 
-    def get(self, request):
-        user_data = User.objects.values()
-        return JsonResponse({'USER DATA' : list(user_data)}, status = 200)
-
 class SignUpIdView(View):
     def post(self, request):
         data = json.loads(request.body)
@@ -83,12 +79,12 @@ class LogInView(View):
         if 'nick_name' not in data or 'password' not in data:
             return JsonResponse({"MESSAGE" : "KEY_ERROR"}, status = 400)
 
-        if not nick_name:
-            return JsonResponse({"MESSAGE" : "NO_EXHIST_USER"}, status = 400)
-
         if User.objects.filter(nick_name=data['nick_name']).exists():
             user = User.objects.get(nick_name=data['nick_name'])
             if bcrypt.checkpw(data['password'].encode('UTF-8'), user.password.encode('UTF-8')):
                 token = jwt.encode({'user_id' : user.id}, SECRET['secret'], algorithm=ALGORITHM['algorithm']).decode('UTF-8')
                 return JsonResponse({'TOKEN' : token, 'user_name' : user.user_name}, status = 200)
             return JsonResponse({"MESSAGE" : "INVALID_USER"}, status = 401)
+        return JsonResponse({"MESSAGE" : "NO_EXIST_USER"}, status = 400)
+
+

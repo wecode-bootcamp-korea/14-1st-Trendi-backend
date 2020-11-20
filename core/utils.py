@@ -10,9 +10,9 @@ from user.models import User
 def login_decorator(func):
     def wrapper(self, request, *args, **kwargs):
         try:
-            token = request.headers.get('Authorization', None)
-            payload = jwt.decode(token, SECRET['secret'], algorithm=ALGORITHM[algorithm])
-            user = User.objects.get(id=payload['user_id'])
+            token        = request.headers.get('Authorization', None)
+            payload      = jwt.decode(token, SECRET['secret'], algorithm=ALGORITHM['algorithm'])
+            user         = User.objects.get(id=payload['user_id'])
             request.user = user
 
         except jwt.exceptions.DecodeError:
