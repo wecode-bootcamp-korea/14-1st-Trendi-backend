@@ -3,7 +3,7 @@ from django.db import models
 from core      import models as core_models
 
 class Order(core_models.TimeStampedModel):
-    number       = models.CharField(max_length=100)
+    order_number = models.CharField(max_length=100)
     delivery_fee = models.IntegerField(null=True, default=0)
     user         = models.ForeignKey("user.User", on_delete=models.CASCADE)
     status       = models.ForeignKey("order.OrderStatus", on_delete=models.SET_NULL, null=True)
@@ -12,16 +12,16 @@ class Order(core_models.TimeStampedModel):
         db_table = 'orders'
     
     def __str__(self):
-        return self.number
+        return self.order_number
 
 class OrderStatus(models.Model):
     status = models.IntegerField()
-
+    
     class Meta:
         db_table = 'status'
     
     def __str__(self):
-        return self.status
+        return str(self.status)
 
 class OrderList(core_models.TimeStampedModel):
     quantity     = models.IntegerField(null=True)
@@ -38,7 +38,7 @@ class Destination(core_models.TimeStampedModel):
     memo         = models.TextField(null=True)
     default_flag = models.BooleanField(default=True)
     order = models.ForeignKey("order.Order", on_delete=models.CASCADE)
-
+    
     class Meta:
         db_table = 'destinations'
 

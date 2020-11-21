@@ -10,9 +10,8 @@ class Review(core_models.TimeStampedModel):
     user             = models.ForeignKey('user.User', on_delete=models.CASCADE)
     product          = models.ForeignKey('product.Product', on_delete=models.CASCADE)
     
-
     class Meta:
         db_table = 'reviews'
-
+    
     def __str__(self):
         return self.content
