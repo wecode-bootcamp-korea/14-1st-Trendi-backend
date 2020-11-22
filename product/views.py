@@ -3,7 +3,7 @@ import operator
 from django.views   import View
 from django.http    import JsonResponse
 
-from product.models import Product
+from product.models import Product, ProductDetailImage
 from order.models import Order
 
 class ProductListView(View):
@@ -52,7 +52,8 @@ class ProductListView(View):
                 'title'           : product.title,
                 'delivery'        : product.delivery.delivery_type != 0,
                 'sale'            : int(product.sale.sale_ratio * 100),
-                'discounted_price': round(int(product.price * (1 - product.sale.sale_ratio)), -2),
+                'discounted_price': get_discounted_price(product.price,
+                                                         product.sale.sale_ratio),
                 'price'           : product.price,
                 'product_favor'   : product.productfavor_set.all().count(),
                 'updated_date'    : product.updated_at,
@@ -69,3 +70,77 @@ class ProductListView(View):
             return JsonResponse({"message": "NOT_EXIST_PRODUCT"}, status=400)
         
         return JsonResponse({"get": result}, status=200)
+
+
+class ProductDetailView(View):
+    
+    def get(self, request, product_id):
+        
+        try:
+            if not type(product_id) is int:
+                raise TypeError
+            
+            product = Product.objects.get(id=product_id)
+            
+            product_detail_images = product.productdetailimage_set.filter(product=product)
+            
+            detail_images = []
+            if product_detail_images:
+                detail_images = [images.detail_image_url for images in product_detail_images]
+            
+            reviews = product.review_set.filter(product=product)
+            
+            review_points_avg = 0
+            if reviews:
+                total_review_point = 0
+                for review in reviews:
+                    total_review_point += review.star
+                
+                review_points_avg = get_avg_review_point(total_review_point, reviews.count())
+            
+            colors      = product.productcolor_set.filter(product=product)
+            color_names = [color.color.name for color in colors]
+            sizes       = product.productsize_set.filter(product=product)
+            size_name   = [size.size.name for size in sizes]
+            
+            if product:
+                product_detail = {
+                    'image_url'          : product.thumb_image_url,
+                    'detail_image_list'  : detail_images,
+                    'seller_name'        : product.seller.name,
+                    'title'              : product.title,
+                    'sale'               : int(product.sale.sale_ratio * 100),
+                    'price'              : product.price,
+                    'discounted_price'   : get_discounted_price(product.price,
+                                                                product.sale.sale_ratio),
+                    'total_review_count' : reviews.count(),
+                    'review_avg'         : review_points_avg,
+                    'color_list'         : color_names,
+                    'size_list'          : size_name,
+                    'delivery'           : product.delivery.delivery_type != 0,
+                    'description'        : product.description,
+                    'product_pk'         : product.pk,
+                    'review_info'        : [{
+                        'star'             : review.star,
+                        'user_name'        : review.user.user_name,
+                        'updated_at'       : review.updated_at,
+                        'user_information' : review.user_information,
+                        'content'          : review.content,
+                        'product_pk'       : review.product.pk,
+                        'review_pk'        : review.pk,
+                    } for review in reviews]
+                }
+        
+        except TypeError:
+            return JsonResponse({"message": "TYPE_ERROR"}, status=400)
+        
+        except Product.DoesNotExist:
+            return JsonResponse({"message": "NOT_EXIST_PRODUCT"}, status=400)
+        
+        return JsonResponse({"get": product_detail}, status=200)
+
+def get_discounted_price(price, sale_ratio):
+    return round(int(price * (1 - sale_ratio)), -2)
+
+def get_avg_review_point(total_point, total_count):
+    return round(total_point / total_count)

@@ -13,6 +13,7 @@ media
 insert_data.py
 delete_all_data.py
 csv
+.DS_Store
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
