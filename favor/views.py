@@ -38,7 +38,7 @@ class ProductFavorView(View):
         if not results.exists():
             return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
 
-        result_lists = [{
+        result_lists = [{ 
             'title'            : result.product.title,
             'thumb_image'      : result.product.thumb_image_url,
             'discounted_price' : int(round(float(result.product.price) * float(1-result.product.sale.sale_ratio),-2)),
@@ -49,8 +49,6 @@ class ProductFavorView(View):
             } for result in results]
         
         return JsonResponse({'results': result_lists}, status = 200)
-
-# 여기 필터 만들어야함, 최근 찜한순, 인기순, 낮은 가격순
 
 class SellerFavorView(View):
     @login_decorator
@@ -74,7 +72,6 @@ class SellerFavorView(View):
     @login_decorator
     def get(self, request):
         user_id = request.user.id
-        #result = request.GET['result']
         results = SellerFavor.objects.filter(user=user_id)
         
         if not results.exists():

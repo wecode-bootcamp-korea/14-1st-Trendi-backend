@@ -27,4 +27,3 @@ class SearchView(View):
         number_of_products = Product.objects.filter(title__contains=keyword).count()
         
         return JsonResponse({'number of products': number_of_products,'products': product_lists}, status = 200)
-
