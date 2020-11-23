@@ -38,20 +38,20 @@ class ReviewView(View):
     def get(self, request, id):
         product_id = id
         reviews = Review.objects.filter(product=product_id)
+        #review_id 추가
 
         if not reviews.exists():
             return JsonResponse({"message":"INVALID_REVIEW"}, status=200)
 
-        for review in reviews:
-            review_list = [{
-                "content"         : review.content,
-                "image_url"       : review.image_url,
-                "star"            : review.star,
-                "nick_name"       : review.user.nick_name,
-                "product"         : review.product_id,
-                "updated_at"      : str(review.updated_at),
-                "user_information": review.user_information
-            } for review in reviews]
+        review_list = [{
+            "content"         : review.content,
+            "image_url"       : review.image_url,
+            "star"            : review.star,
+            "nick_name"       : review.user.nick_name,
+            "product"         : review.product_id,
+            "updated_at"      : str(review.updated_at),
+            "user_information": review.user_information
+        } for review in reviews]
         return JsonResponse({"data": review_list}, status=200)
     
     def delete(self, request):
