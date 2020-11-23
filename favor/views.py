@@ -1,12 +1,12 @@
 import json
 
-from django.views     import View
-from django.http    import JsonResponse
+from django.views import View
+from django.http  import JsonResponse
 
-from user.models import User, Seller
+from user.models    import User, Seller
 from product.models import Product
-from .models    import ProductFavor, SellerFavor
-from core.utils import login_decorator
+from .models        import ProductFavor, SellerFavor
+from core.utils     import login_decorator
 
 
 class ProductFavorView(View):
@@ -31,13 +31,12 @@ class ProductFavorView(View):
     @login_decorator
     def get(self, request,):
         user_id = request.user.id
-      #  result = request.GET.get(product_id, None)  이거 가라겟겟 공부
         results = ProductFavor.objects.filter(user=user_id)
         
         if not results.exists():
             return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
 
-        result_lists = [{ # 역참조 공부 fetch_selected 공부
+        result_lists = [{
             'title'            : result.product.title,
             'thumb_image'      : result.product.thumb_image_url,
             'discounted_price' : int(round(float(result.product.price) * float(1-result.product.sale.sale_ratio),-2)),
@@ -48,8 +47,6 @@ class ProductFavorView(View):
             } for result in results]
         
         return JsonResponse({'results': result_lists}, status = 200)
-
-# 여기 필터 만들어야함, 최근 찜한순, 인기순, 낮은 가격순
 
 class SellerFavorView(View):
     @login_decorator
@@ -73,7 +70,6 @@ class SellerFavorView(View):
     @login_decorator
     def get(self, request):
         user_id = request.user.id
-        #result = request.GET['result']
         results = SellerFavor.objects.filter(user=user_id)
         
         if not results.exists():
