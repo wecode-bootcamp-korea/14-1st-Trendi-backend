@@ -1,6 +1,7 @@
 from django.urls import path
 
-from .views      import ProductFavorView
+from .views      import ProductFavorView, SellerFavorView
 urlpatterns = [
-    path('/wish_product', ProductFavorView.as_view()),
+    path('/product_favor', ProductFavorView.as_view()),
+    path('/seller_favor', SellerFavorView.as_view()),
 ]
