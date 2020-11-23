@@ -33,13 +33,12 @@ class ProductFavorView(View):
     @login_decorator
     def get(self, request,):
         user_id = request.user.id
-      #  result = request.GET.get(product_id, None)  이거 가라겟겟 공부
         results = ProductFavor.objects.prefetch_related('product').filter(user=user_id)
         
         if not results.exists():
             return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
 
-        result_lists = [{ # 역참조 공부 fetch_selected 공부
+        result_lists = [{
             'title'            : result.product.title,
             'thumb_image'      : result.product.thumb_image_url,
             'discounted_price' : int(round(float(result.product.price) * float(1-result.product.sale.sale_ratio),-2)),

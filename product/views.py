@@ -8,45 +8,23 @@ from product.models import Product
 
 class SearchView(View):
     def get(self, request):
-        result = request.GET['result']
-        results = Product.objects.filter(title__contains=result)
+        keyword = request.GET['keyword']
+        products = Product.objects.filter(title__contains=keyword)
         
-        if not results.exists():
+        if not products.exists():
             return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
 
-        result_lists = [{
-            'title'            : result.title,
-            'thumb_image'      : result.thumb_image_url,
-            'discounted_price' : int(round(float(result.price) * float(1-result.sale.sale_ratio),-2)),
-            'price'            : result.price,
-            'seller'           : result.seller.name,
-            'delivery'         : result.delivery.delivery_type,
-            'sale'             : str(int(result.sale.sale_ratio * 100)) + '%'
-            } for result in results]
+        product_lists = [{
+            'title'            : product.title,
+            'thumb_image'      : product.thumb_image_url,
+            'discounted_price' : int(round(float(product.price) * float(1-product.sale.sale_ratio),-2)),
+            'price'            : product.price,
+            'seller'           : product.seller.name,
+            'delivery'         : product.delivery.delivery_type,
+            'sale'             : str(int(product.sale.sale_ratio * 100)) + '%'
+            } for product in products]
 
-        number_of_results = Product.objects.filter(title__contains=result).count()
+        number_of_products = Product.objects.filter(title__contains=keyword).count()
         
-        return JsonResponse({'number of results': number_of_results,'results': result_lists}, status = 200)
+        return JsonResponse({'number of products': number_of_products,'products': product_lists}, status = 200)
 
-
-class SearchView(View): # 셀러들 보여주는 것도 만들어야함,,
-    def get(self, request):
-        result = request.GET['result']
-        results = Product.objects.filter(sub_category=result)
-        
-        if not results.exists():
-            return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
-
-        result_lists = [{
-            'title'            : result.title,
-            'thumb_image'      : result.thumb_image_url,
-            'discounted_price' : int(round(float(result.price) * float(1-result.sale.sale_ratio),-2)),
-            'price'            : result.price,
-            'seller'           : result.seller.name,
-            'delivery'         : result.delivery.delivery_type,
-            'sale'             : str(int(result.sale.sale_ratio * 100)) + '%'
-            } for result in results]
-
-        number_of_results = Product.objects.filter(sub_category=result).count()
-        
-        return JsonResponse({'number of results': number_of_results,'results': result_lists}, status = 200)
