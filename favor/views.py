@@ -1,23 +1,23 @@
 import json
 
-from django.views     import View
-from django.http    import JsonResponse
+from django.views import View
+from django.http  import JsonResponse
 
-from user.models import User, Seller
+from user.models    import User, Seller
 from product.models import Product
-from .models    import ProductFavor, SellerFavor
-from core.utils import login_decorator
+from .models        import ProductFavor, SellerFavor
+from core.utils     import login_decorator
 
 
 class ProductFavorView(View):
     @login_decorator
     def post(self, request):
         try:
-            data    = json.loads(request.body)
-            user_id = request.user.id
-
-            if ProductFavor.objects.filter(user=user_id, product=data['product_id']).exists():
-                ProductFavor.objects.get(user=user_id, product=data['product_id']).delete()
+            data       = json.loads(request.body)
+            user_id    = request.user.id
+            product_id = data['product_id']
+            if ProductFavor.objects.filter(user=user_id, product=product_id).exists():
+                ProductFavor.objects.get(user=user_id, product=product_id).delete()
                 return JsonResponse({'MESSAGE':'REMOVED'}, status = 200)
             
             ProductFavor(
@@ -25,14 +25,16 @@ class ProductFavorView(View):
                 product_id = data['product_id']
             ).save()
             return JsonResponse({'MESSAGE':'ADDED_TO_FAVOR_PRODUCT'}, status = 201)
-        except KeyError:
-            return JsonResponse({'MESSAGE':'KEY_ERROR'}, status = 400)
+        except KeyError as e :
+            return JsonResponse({'MESSAGE': f'KEY_ERROR:{e}'}, status=400)
+        except json.JSONDecodeError as e :
+            return JsonResponse({'MESSAGE': f'JSON_DECODE_ERROR:{e}'}, status=400)
 
     @login_decorator
     def get(self, request,):
         user_id = request.user.id
       #  result = request.GET.get(product_id, None)  이거 가라겟겟 공부
-        results = ProductFavor.objects.filter(user=user_id)
+        results = ProductFavor.objects.prefetch_related('product').filter(user=user_id)
         
         if not results.exists():
             return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
