@@ -47,7 +47,7 @@ class SignUpIdView(View):
     def post(self, request):
         data = json.loads(request.body)
         try:
-            nick_name = data["nick_name"]
+            nick_name = data["id"]
             if not validate_nick_name(nick_name):
                 return JsonResponse({'message':'INVALID_NICK_NAME'}, status = 400)
 
@@ -83,7 +83,7 @@ class LogInView(View):
             user = User.objects.get(nick_name=data['nick_name'])
             if bcrypt.checkpw(data['password'].encode('UTF-8'), user.password.encode('UTF-8')):
                 token = jwt.encode({'user_id' : user.id}, SECRET['secret'], algorithm=ALGORITHM['algorithm']).decode('UTF-8')
-                return JsonResponse({'TOKEN' : token, 'user_name' : user.user_name}, status = 200)
+                return JsonResponse({'TOKEN' : token, 'user_name' : user.user_name, 'id':user.nick_name}, status = 200)
             return JsonResponse({"MESSAGE" : "INVALID_USER"}, status = 401)
         return JsonResponse({"MESSAGE" : "NO_EXIST_USER"}, status = 400)
 
