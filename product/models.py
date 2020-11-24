@@ -43,9 +43,6 @@ class Delivery(models.Model):
     class Meta:
         db_table = 'deliveries'
 
-    def __str__(self):
-        return str(self.delivery_type)
-
 class Category(models.Model):
     name = models.CharField(max_length=50)
 

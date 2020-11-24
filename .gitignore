@@ -11,6 +11,8 @@ db.sqlite3
 db.sqlite3-journal
 media
 
+data.py
+csv
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
 # <django-project-name>/staticfiles/
@@ -284,3 +286,9 @@ csv
 .vscode
 
 .DS_Store
+
+favor/migrations
+order/migrations
+product/migrations
+review/migrations
+user/migrations
