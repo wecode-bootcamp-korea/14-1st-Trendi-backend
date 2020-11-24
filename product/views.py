@@ -6,10 +6,12 @@ from django.http      import JsonResponse
 from user.models    import User 
 from product.models import Product
 
+
+
 class SearchView(View):
     def get(self, request):
-        keyword = request.GET['keyword']
-        products = Product.objects.filter(title__contains=keyword)
+        product = request.GET['result']
+        products = Product.objects.select_related('seller','delivery','sale').filter(title__contains=product)
         
         if not products.exists():
             return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
@@ -24,6 +26,6 @@ class SearchView(View):
             'sale'             : str(int(product.sale.sale_ratio * 100)) + '%'
             } for product in products]
 
-        number_of_products = Product.objects.filter(title__contains=keyword).count()
-        
-        return JsonResponse({'number of products': number_of_products,'products': product_lists}, status = 200)
+        number_of_results = Product.objects.filter(title__contains=product).count()
+
+        return JsonResponse({'number of results': number_of_results, 'results': product_lists}, status = 200)
