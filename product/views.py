@@ -7,8 +7,8 @@ from user.models    import User
 from product.models import Product
 
 
-
 class SearchView(View):
+    @query_debugger
     def get(self, request):
         product = request.GET['result']
         products = Product.objects.select_related('seller','delivery','sale').filter(title__contains=product)
