@@ -14,6 +14,7 @@ class Product(core_models.TimeStampedModel):
     sub_category    = models.ForeignKey('product.SubCategory', on_delete=models.CASCADE)
     size            = models.ManyToManyField('product.Size', through = "ProductSize", related_name='sizes')
     color           = models.ManyToManyField('product.Color', through = "ProductColor", related_name='colors')
+    brandi_pick     = models.BooleanField(null=True)
     
     class Meta:
         db_table = 'products'
