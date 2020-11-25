@@ -284,3 +284,18 @@ tags
 
 my_settings.py
 *.csv
+
+review/data.py
+
+data.py
+csv
+
+.vscode
+
+.DS_Store
+
+favor/migrations
+order/migrations
+product/migrations
+review/migrations
+user/migrations
