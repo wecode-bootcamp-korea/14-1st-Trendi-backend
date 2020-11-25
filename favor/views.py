@@ -31,9 +31,9 @@ class ProductFavorView(View):
             return JsonResponse({'MESSAGE': f'JSON_DECODE_ERROR:{e}'}, status=400)
 
     @login_decorator
-    def get(self, request,):
+    def get(self, request):
         user_id = request.user.id
-        results = ProductFavor.objects.select_related('user','product__seller','product__sale', 'product__delivery').filter(user=2)
+        results = ProductFavor.objects.select_related('user','product__seller','product__sale', 'product__delivery').filter(user=user_id)
 
         if not results.exists():
             return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
@@ -48,7 +48,7 @@ class ProductFavorView(View):
             'sale'             : str(int(result.product.sale.sale_ratio * 100)) + '%'
             } for result in results]
 
-        number_of_products = ProductFavor.objects.select_related('user','product').filter(user=2).count()
+        number_of_products = ProductFavor.objects.filter(user=user_id).count()
 
         return JsonResponse({'number of products': number_of_products,'results': result_lists}, status = 200)
 
