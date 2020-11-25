@@ -63,7 +63,7 @@ class SubCategory(models.Model):
         return self.name
 
 class Size(models.Model):
-    name = models.CharField(max_length=40)
+    name = models.CharField(max_length=40, null=True)
 
     class Meta:
         db_table = 'sizes'
@@ -79,7 +79,7 @@ class ProductSize(models.Model):
         db_table = 'products_sizes'
 
 class Color(models.Model):
-    name = models.CharField(max_length=40)
+    name = models.CharField(max_length=40, null=True)
 
     class Meta:
         db_table = 'colors'

@@ -23,14 +23,13 @@ class OrderListView(View):
     def post(self, request):
         data = json.loads(request.body)
         try:
-            user = User.objects.get(pk=data["user_id"])
+            user     = User.objects.get(pk=data["user_id"])
             quantity = data["quantity"]
-            product = Product.objects.get(pk=data["product_id"])
-            color = data.get("color",0)
-            size = data.get("size",0)
-            order = Order.objects.filter(user=user, status_id=1)
-            current_order = order.last()
-            print("------order------",order)
+            product  = Product.objects.get(pk=data["product_id"])
+            color    = data.get("color",0)
+            size     = data.get("size",0)
+            order    = Order.objects.filter(user_id=user_id, status_id=1)
+            
             if not order.exists():
                 created_order = Order.objects.create(
                     user         = user,
@@ -44,7 +43,8 @@ class OrderListView(View):
                 created_order.number = number
                 created_order.save()
 
-            existing_orderlist = OrderList.objects.filter(product=product, order_id=current_order.id, color=color, size=size)
+            current_order = order.last()
+            existing_orderlist = OrderList.objects.filter(product=product, order=current_order, color=color, size=size)
             if existing_orderlist.exists():
                 existing_orderlist.update(quantity=existing_orderlist.first().quantity + quantity)
                 existing_orderlist.first().save()
@@ -56,10 +56,11 @@ class OrderListView(View):
                     color    = color,
                     size     = size
                 )
-            
             orderlists = current_order.orderlist_set.all()
+            print("------orderlists-------",orderlists)
             delivery_fee_calculator(orderlists, current_order)
-            return JsonResponse({"message":"SUCCESS"}, status=200)
+
+            return JsonResponse({"message":"SUCCESS"}, status=201)
         except Product.DoesNotExist:
             return JsonResponse({"message":"INVALID_PRODUCT"}, status=400)
         except User.DoesNotExist:
@@ -70,11 +71,11 @@ class OrderListView(View):
     def get(self, request, id):
         user_id = id
         user = User.objects.get(pk=user_id)
-        #####
         try:
             order = Order.objects.get(user=user, status_id=1)
             orderlists = OrderList.objects.filter(order=order)
             orderlist_data = [{
+                "orderlist_id"    : orderlist.id,
                 "title"           : orderlist.product.title,
                 "quantity"        : orderlist.quantity,
                 "price"           : orderlist.product.price,
@@ -90,10 +91,11 @@ class OrderListView(View):
         except OrderList.DoesNotExist:
             return JsonResponse({"message":"INVALID_ORDERLIST"}, status=400)
     
-    def delete(self, request):
+    def delete(self, request, id):
         try:
             user = request.GET["user_id"]
-            orderlist_id = request.GET['orderlist_id']
+            orderlist_id = id
+            
             user = User.objects.get(pk=user)
             orderlist_to_delete = OrderList.objects.get(pk=orderlist_id)
 
@@ -114,11 +116,11 @@ class OrderListView(View):
         except KeyError:
             return JsonResponse({"message":"INVALID_KEYS"}, status=400)
     
-    def put(self, request):
+    def patch(self, request, id):
         data = json.loads(request.body)
+        orderlist_id = id
         try:
             user = User.objects.get(pk=data["user_id"])
-            orderlist_id = data["orderlist_id"]
             quantity= data["quantity"]
             orderlist_to_update = OrderList.objects.get(pk=orderlist_id)
             if orderlist_to_update.order.user != user:

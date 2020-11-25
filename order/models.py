@@ -24,8 +24,8 @@ class OrderList(core_models.TimeStampedModel):
     quantity     = models.IntegerField(null=True)
     order        = models.ForeignKey('order.Order', on_delete=models.SET_NULL, null=True)
     product      = models.ForeignKey('product.Product', on_delete=models.SET_NULL, null=True)
-    size         = models.IntegerField(null=True)
-    color        = models.IntegerField(null=True)
+    size         = models.ForeignKey("product.Size",on_delete=models.CASCADE, null=True)
+    color        = models.ForeignKey("product.Color",on_delete=models.CASCADE, null=True)
 
     class Meta:
         db_table = 'order_lists'

@@ -44,6 +44,7 @@ class ReviewView(View):
             return JsonResponse({"message":"INVALID_REVIEW"}, status=200)
 
         review_list = [{
+            "review_id"       : review.id,
             "content"         : review.content,
             "image_url"       : review.image_url,
             "star"            : review.star,
@@ -51,12 +52,12 @@ class ReviewView(View):
             "product"         : review.product_id,
             "updated_at"      : str(review.updated_at),
             "user_information": review.user_information
-        } for review in reviews]
+        } for review in reviews[::-1]]
         return JsonResponse({"data": review_list}, status=200)
     
-    def delete(self, request):
+    def delete(self, request, id):
+        review_id = id
         user_id = int(request.GET['user_id'])
-        review_id = request.GET['review_id']
 
         try:
             review_to_delete = Review.objects.get(pk=review_id)
@@ -69,12 +70,12 @@ class ReviewView(View):
         except KeyError:
             return JsonResponse({"message":"INVALID_KEYS"}, status=400)
 
-    def put(self, request):
+    def patch(self, request,id):
         data = json.loads(request.body)
+        review_id = id
 
         try:
             user_id          = data["user_id"]
-            review_id        = data["review_id"]
             content          = data["content"]
             user_information = data["user_information"]
             image_url        = data["image_url"]
