@@ -2,7 +2,7 @@ import jwt
 import bcrypt
 import re
 
-from django.htp import JsonResponse
+from django.http import JsonResponse
 
 from my_settings import SECRET, ALGORITHM
 from user.models import User
