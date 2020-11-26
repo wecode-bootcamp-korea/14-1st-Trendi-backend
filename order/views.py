@@ -90,6 +90,7 @@ class OrderListView(View):
         except Order.DoesNotExist:
             return JsonResponse({"message":"INVALID_ORDER"}, status=400)
 
+class OrderListUpdateView(View):
     @login_decorator
     def delete(self, request, id):
         try:

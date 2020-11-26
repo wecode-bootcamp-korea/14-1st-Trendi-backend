@@ -12,6 +12,6 @@ class Review(core_models.TimeStampedModel):
     
     class Meta:
         db_table = 'reviews'
-
+    
     def __str__(self):
         return self.content
