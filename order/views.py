@@ -9,16 +9,15 @@ from product.models import Product, Color, ProductColor, Size, ProductSize
 from user.models import User
 from core.utils import login_decorator
 
-def delivery_fee_calculator(orderlists, current_order):
+def delivery_fee_calculator(orderlists):
     sum = 0
     for orderlist in orderlists:
         sum += orderlist.product.price*orderlist.quantity
     if sum > 50000:
-        current_order.delivery_fee = 0
-        current_order.save()
+        orderlist.order.delivery_fee = 0
     else:
-        current_order.delivery_fee = 2500
-        current_order.save()
+        orderlist.order.delivery_fee = 2500
+    orderlist.order.save()
 
 class OrderListView(View):
     @login_decorator
@@ -31,6 +30,9 @@ class OrderListView(View):
             color_id = data.get("color_id",None)
             size_id  = data.get("size_id",None)
             order    = Order.objects.filter(user=user, orderstatus_id=1)
+
+            if quantity < 1:
+                return JsonResponse({"message":"INVALID_QUANTITY"},status=400)
             if not order.exists():
                 created_order = Order.objects.create(
                     user           = user,
@@ -45,21 +47,19 @@ class OrderListView(View):
                 created_order.save()
 
             current_order = order.last()
-            existing_orderlist,created = OrderList.objects.get_or_create(
+            orderlist, created = OrderList.objects.get_or_create(
                 product=product,
                 order=current_order,
                 color_id=color_id,
                 size_id=size_id
             )
-            if not created:
-                existing_orderlist.quantity += quantity
-                existing_orderlist.save()
-            else:
-                existing_orderlist.quantity = quantity
-                existing_orderlist.save()
+            if created:
+                orderlist.quantity = 0
+            orderlist.quantity += quantity
+            orderlist.save()
 
             orderlists = current_order.orderlist_set.all()
-            delivery_fee_calculator(orderlists, current_order)
+            delivery_fee_calculator(orderlists)
             return JsonResponse({"message":"SUCCESS"}, status=201)
         except Product.DoesNotExist:
             return JsonResponse({"message":"INVALID_PRODUCT"}, status=400)
@@ -101,12 +101,12 @@ class OrderListView(View):
             deleted_order_number = orderlist.order.id
             orderlist.delete()
 
-            if not OrderList.objects.filter(order_id=deleted_order_number).exists():
+            orderlists = OrderList.objects.select_related('product').filter(order_id=deleted_order_number)
+            if orderlists.exists():
+                delivery_fee_calculator(orderlists)
+            else:
                 Order.objects.get(pk=deleted_order_number).delete()
-            
-            order = Order.objects.filter(user=user, orderstatus_id=1).last()
-            orderlists = order.orderlist_set.all()
-            delivery_fee_calculator(orderlists, order)
+
             return JsonResponse({"message":"SUCCESS"}, status=200)
         except OrderList.DoesNotExist:
             return JsonResponse({"message":"INVALID_ORDERLIST"}, status=400)
@@ -128,9 +128,8 @@ class OrderListView(View):
             orderlist_to_update.quantity = quantity
             orderlist_to_update.save()
 
-            order = Order.objects.filter(user=user, orderstatus_id=1).last()
-            orderlists = order.orderlist_set.all()
-            delivery_fee_calculator(orderlists, order)
+            orderlists = Order.objects.filter(user=user, orderstatus_id=1).last().orderlist_set.select_related('product').all()
+            delivery_fee_calculator(orderlists)
             return JsonResponse({"message":"SUCCESS"}, status=200)
         except OrderList.DoesNotExist:
             return JsonResponse({"message":"INVALID_ORDERLIST"}, status=400)
