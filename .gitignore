@@ -302,3 +302,14 @@ order/migrations
 product/migrations
 review/migrations
 user/migrations
+
+.idea/.gitignore
+.idea/14-1st-Trendi-backend.iml
+.idea/codeStyles/codeStyleConfig.xml
+.idea/dictionaries/vcne.xml
+.idea/encodings.xml
+.idea/inspectionProfiles/Project_Default.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
