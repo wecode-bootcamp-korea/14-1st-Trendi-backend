@@ -116,7 +116,7 @@ class ProductListView(View):
             return JsonResponse({"message": "NOT_EXIST_PRODUCT"}, status=400)
         
         if not product_list:
-            return JsonResponse({"message": "NO_RESULT"})
+            return JsonResponse({"message": "NO_RESULT"}, status=400)
         
         return JsonResponse(
             {

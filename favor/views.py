@@ -88,15 +88,3 @@ class SellerFavorView(View):
             } for result in results]
         
         return JsonResponse({'results': result_lists}, status = 200)
-
-
-
-
-
-
-
-
-
-
-
-
