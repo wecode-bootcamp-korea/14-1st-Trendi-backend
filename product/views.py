@@ -1,16 +1,17 @@
-from datetime import datetime, timedelta
+from datetime         import datetime, timedelta
 
-from django.db.models import Sum, Q, Count, F, OuterRef, Subquery
-from django.views   import View
-from django.http    import JsonResponse
+from django.db.models import Sum, Q, Count, OuterRef, Subquery
+from django.views     import View
+from django.http      import JsonResponse
 
-from product.models import Product
-from review.models import Review
+from product.models   import Product
+from review.models    import Review
 
 class ProductListView(View):
     
     def get(self, request):
         try:
+            search        = request.GET.get('search', None)
             is_pick       = request.GET.get('trendi-pick', None)
             ranking_by    = request.GET.get('ranking', None)
             is_sale       = request.GET.get('sale', None)
@@ -19,63 +20,72 @@ class ProductListView(View):
             sub_category  = request.GET.get('sub-category', None)
             ordering      = request.GET.get('ordering', None)
             
-            products = Product.objects.filter(orderlist__order__orderstatus_id=5).\
-                select_related('seller', 'delivery', 'sale', 'category', 'sub_category').\
-                prefetch_related('orderlist_set', 'review_set').\
+            products = Product.objects.\
+                filter(orderlist__order__orderstatus_id=5).\
+                select_related(
+                    'seller',
+                    'delivery',
+                    'sale',
+                    'category',
+                    'sub_category'
+                ).\
+                prefetch_related(
+                    'orderlist_set',
+                    'review_set'
+                ).\
                 annotate(sum=Sum('orderlist__quantity')).\
-                annotate(review_count=Review.objects.filter(
-                product=OuterRef('pk')).values('product').
-                         annotate(count=Count('pk')).values('count'))
+                annotate(review_count=Subquery(
+                    Review.objects.filter(product=OuterRef('pk')).values('product').
+                        annotate(count=Count('pk')).values('count'))
+                )
             
-            print(len(products))
             q = Q()
             
             if is_pick:
                 q.add(Q(trendi_pick=is_pick), Q.AND)
-                print(q)
+                products = products.order_by('-sum')
                 
             if is_sale:
                 q.add(Q(sale_id__gt=is_sale), Q.AND)
-                print(q)
                 
             if ranking_by:
                 rank_filter = {'day' : 1, 'week' : 7, 'month' : 30}
                 date = datetime.today() - timedelta(days=rank_filter[ranking_by])
                 q.add(Q(orderlist__updated_at__gt=date), Q.AND)
-                print(q)
                 
             if category:
                 q.add(Q(category=category), Q.AND)
-                print(q)
                 
             if sub_category:
                 q.add(Q(sub_category=sub_category), Q.AND)
-                print(q)
                 
             if is_delivery:
                 q.add(Q(delivery__delivery_type=is_delivery), Q.AND)
-                print(q)
-                # sort_type = {latest: '-updated_at', price: '-price'}
-                # for key, value in sort_type.items():
-                #     if key:
-                #         products = products.order_by(value)
-                #         break
-            
-            # if review:
-            #     print("==========")
-            #     products = products.annotate(review=Sum('review__id'))
             
             sort_type = {
-                'order'  : '-sum',
-                'latest' : '-updated_at',
-                'review' : '-review_count',
-                'price'  : 'price',
-                '-price' : '-price'
+                'latest'  : '-updated_at',
+                'review'  : '-review_count',
+                'l-price' : 'price',
+                'h-price' : '-price',
+                None      : '-sum'
             }
             
-            if ordering in sort_type:
-                print(ordering)
+            if not ordering:
                 products = products.order_by(sort_type[ordering])
+            
+            if ordering in sort_type:
+                products = products.order_by(sort_type[ordering])
+            
+            if search:
+                print(search)
+                products = Product.objects.select_related(
+                    'seller', 'delivery', 'sale',
+                )
+                
+                q &= Q(title__icontains              = search) |\
+                     Q(category__name__icontains     = search) |\
+                     Q(sub_category__name__icontains = search) |\
+                     Q(seller__name__icontains       = search)
             
             product_list = [{
                 'is_pick'         : product.trendi_pick,
@@ -89,14 +99,17 @@ class ProductListView(View):
                                         product.sale.sale_ratio
                                     ),
                 'price'           : product.price,
-                'product_favor'   : product.productfavor_set.all().count(),
                 'updated_date'    : product.updated_at,
                 'product_pk'      : product.pk,
-                'ordered_count'   : product.sum,
-                'review_count'    : product.review_count,
+                # 확인용 ============================================
                 'category'        : product.category.id,
-                'sub_category'    : product.sub_category.id
+                'sub_category'    : product.sub_category.id,
+                'ordered_count'   : product.sum,
+                'review_count'    : product.review_count
+                # ==================================================
             } for product in products.filter(q)]
+            
+            number_of_products = products.filter(q).count()
             
         except TypeError:
             return JsonResponse({"message": "TYPE_ERROR"}, status=400)
@@ -106,8 +119,16 @@ class ProductListView(View):
             
         except Product.DoesNotExist:
             return JsonResponse({"message": "NOT_EXIST_PRODUCT"}, status=400)
-            
-        return JsonResponse({"product_list": product_list}, status=200)
+        
+        if not product_list:
+            return JsonResponse({"message": "NO_RESULT"})
+        
+        return JsonResponse(
+            {
+                "number_of_products" : number_of_products,
+                "product_list"       : product_list,
+            }, status=200
+        )
 
 class ProductDetailView(View):
 
@@ -119,7 +140,7 @@ class ProductDetailView(View):
             product = Product.objects.get(id=product_id)
             
             product_detail_images = product.productdetailimage_set.all()
-
+            
             detail_images = [
                 images.detail_image_url for images in product_detail_images
             ]
@@ -165,10 +186,10 @@ class ProductDetailView(View):
         
         except TypeError:
             return JsonResponse({"message": "TYPE_ERROR"}, status=400)
-
+            
         except Product.DoesNotExist:
             return JsonResponse({"message": "NOT_EXIST_PRODUCT"}, status=400)
-
+            
         return JsonResponse({"product_detail": product_detail}, status=200)
 
 def get_discounted_price(price, sale_ratio):
@@ -176,30 +197,3 @@ def get_discounted_price(price, sale_ratio):
 
 def convert_sale(sale_ratio):
     return int(sale_ratio * 100)
-
-def get_review_count(product):
-    reviews = product.review_set.all()
-    return reviews.count()
-
-class SearchView(View):
-    def get(self, request):
-        keyword = request.GET['keyword']
-        products = Product.objects.filter(title__contains=keyword)
-        
-        if not products.exists():
-            return JsonResponse({'MESSAGE' : 'NO_RESULT!'}, status = 400)
-        
-        product_lists = [{
-            'title'            : product.title,
-            'thumb_image'      : product.thumb_image_url,
-            'discounted_price' : int(round(float(product.price) * float(1-product.sale.sale_ratio),-2)),
-            'price'            : product.price,
-            'seller'           : product.seller.name,
-            'delivery'         : product.delivery.delivery_type,
-            'sale'             : str(int(product.sale.sale_ratio * 100)) + '%'
-            } for product in products]
-        
-        number_of_products = Product.objects.filter(title__contains=keyword).count()
-        
-        return JsonResponse({'number of products': number_of_products, 'products':
-            product_lists}, status = 200)

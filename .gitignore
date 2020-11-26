@@ -13,6 +13,7 @@ media
 insert_data.py
 delete_all_data.py
 .DS_Store
+debug.log
 
 csv
 
