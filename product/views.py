@@ -2,19 +2,28 @@ import json
 
 from django.views     import View
 from django.http      import JsonResponse
+from django.db.models import Q
+
 
 from user.models    import User 
 from product.models import Product
 
 
 class SearchView(View):
-    @query_debugger
     def get(self, request):
-        product = request.GET['result']
-        products = Product.objects.select_related('seller','delivery','sale').filter(title__contains=product)
+        search   = request.GET.get('search')
+
+        products = Product.objects.select_related('seller','delivery','sale')
+
+        search_content = Q()
+
+        if search:
         
-        if not products.exists():
-            return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
+        search_content &= 
+            Q(title__icontains               = search) |\
+            Q(category__name__icontains      = search) |\
+            Q(sub_category__name__icontatins = search) |\
+            Q(seller__name__icontains        = serach)
 
         product_lists = [{
             'title'            : product.title,
@@ -24,8 +33,11 @@ class SearchView(View):
             'seller'           : product.seller.name,
             'delivery'         : product.delivery.delivery_type,
             'sale'             : str(int(product.sale.sale_ratio * 100)) + '%'
-            } for product in products]
+            } for product in products.filter(search_content)]
+        
+        number_of_products = products.filter(search_content).count()
 
-        number_of_results = Product.objects.filter(title__contains=product).count()
+        if not product_lists.exists():
+            return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
 
-        return JsonResponse({'number of results': number_of_results, 'results': product_lists}, status = 200)
+        return JsonResponse({'number of results': number_of_products, 'results': product_lists}, status = 200)
