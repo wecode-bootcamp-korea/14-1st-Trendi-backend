@@ -145,7 +145,7 @@ class ProductDetailView(View):
                 images.detail_image_url for images in product_detail_images
             ]
             
-            reviews = product.review_set.all()
+            reviews = product.review_set.all().order_by('-updated_at')
             avg_review_point = round(
                 sum([review.star for review in reviews]) / reviews.count()
             )
@@ -179,6 +179,7 @@ class ProductDetailView(View):
                     'updated_at'       : review.updated_at,
                     'user_information' : review.user_information,
                     'content'          : review.content,
+                    'photo_review'     : review.image_url,
                     'product_pk'       : review.product.pk,
                     'review_pk'        : review.pk,
                 } for review in reviews]
