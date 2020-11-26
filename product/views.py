@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 
-from django.db.models import Sum, Q, Count, F
+from django.db.models import Sum, Q, Count, F, OuterRef, Subquery
 from django.views   import View
 from django.http    import JsonResponse
 
 from product.models import Product
+from review.models import Review
 
 class ProductListView(View):
     
@@ -14,18 +15,17 @@ class ProductListView(View):
             ranking_by    = request.GET.get('ranking', None)
             is_sale       = request.GET.get('sale', None)
             is_delivery   = request.GET.get('delivery', None)
-            # latest        = request.GET.get('latest', None)
-            # price         = request.GET.get('price', None)
             category      = request.GET.get('category', None)
             sub_category  = request.GET.get('sub-category', None)
-            # review        = request.GET.get('review', None)
             ordering      = request.GET.get('ordering', None)
             
             products = Product.objects.filter(orderlist__order__orderstatus_id=5).\
                 select_related('seller', 'delivery', 'sale', 'category', 'sub_category').\
                 prefetch_related('orderlist_set', 'review_set').\
                 annotate(sum=Sum('orderlist__quantity')).\
-                annotate(review_count=Count('review__id')).order_by('-sum')
+                annotate(review_count=Review.objects.filter(
+                product=OuterRef('pk')).values('product').
+                         annotate(count=Count('pk')).values('count'))
             
             print(len(products))
             q = Q()
@@ -69,15 +69,13 @@ class ProductListView(View):
                 'order'  : '-sum',
                 'latest' : '-updated_at',
                 'review' : '-review_count',
-                'price'  : '-price'
+                'price'  : 'price',
+                '-price' : '-price'
             }
             
             if ordering in sort_type:
                 print(ordering)
-                print(sort_type[ordering])
                 products = products.order_by(sort_type[ordering])
-            
-            print(len(products))
             
             product_list = [{
                 'is_pick'         : product.trendi_pick,
@@ -95,7 +93,7 @@ class ProductListView(View):
                 'updated_date'    : product.updated_at,
                 'product_pk'      : product.pk,
                 'ordered_count'   : product.sum,
-                'review_count'    : get_review_count(product),
+                'review_count'    : product.review_count,
                 'category'        : product.category.id,
                 'sub_category'    : product.sub_category.id
             } for product in products.filter(q)]
@@ -125,17 +123,17 @@ class ProductDetailView(View):
             detail_images = [
                 images.detail_image_url for images in product_detail_images
             ]
-
+            
             reviews = product.review_set.all()
             avg_review_point = round(
                 sum([review.star for review in reviews]) / reviews.count()
             )
-
+            
             colors  = [color.color.name
                        for color in product.productcolor_set.all()]
             sizes   = [size.size.name
                        for size in product.productsize_set.all()]
-
+            
             product_detail = {
                 'image_url'          : product.thumb_image_url,
                 'detail_image_list'  : detail_images,
@@ -164,7 +162,7 @@ class ProductDetailView(View):
                     'review_pk'        : review.pk,
                 } for review in reviews]
             }
-
+        
         except TypeError:
             return JsonResponse({"message": "TYPE_ERROR"}, status=400)
 
@@ -181,9 +179,6 @@ def convert_sale(sale_ratio):
 
 def get_review_count(product):
     reviews = product.review_set.all()
-    if product.pk == 50:
-        print(reviews.count())
-    
     return reviews.count()
 
 class SearchView(View):
