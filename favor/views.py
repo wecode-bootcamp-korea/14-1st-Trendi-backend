@@ -39,6 +39,7 @@ class ProductFavorView(View):
             return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
 
         result_lists = [{
+            'id'               : result.product.id,
             'title'            : result.product.title,
             'thumb_image'      : result.product.thumb_image_url,
             'discounted_price' : int(round(float(result.product.price) * float(1-result.product.sale.sale_ratio),-2)),
@@ -74,12 +75,13 @@ class SellerFavorView(View):
     @login_decorator
     def get(self, request):
         user_id = request.user.id
-        results = SellerFavor.objects.filter(user=user_id)
+        results = SellerFavor.objects.select_related('user','seller').filter(user=user_id)
         
         if not results.exists():
             return JsonResponse({'MESSAGE':'NO_RESULT!'}, status = 400)
 
         result_lists = [{
+            'id'        : result.seller.id,
             'name'      : result.seller.name,
             'image_url' : result.seller.image_url,
             'hash_tag'  : '#' + '#'.join(result.seller.hash_tag.split()),

@@ -1,9 +1,12 @@
 import json
 
-from django.views import View
-from django.http  import JsonResponse
+from django.views     import View
+from django.http      import JsonResponse
+from django.db.models import Q
 
 from user.models    import User 
+from product.models import Product
+
 from product.models import Product
 
 class SearchView(View):

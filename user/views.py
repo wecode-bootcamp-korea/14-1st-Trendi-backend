@@ -47,7 +47,7 @@ class SignUpIdView(View):
     def post(self, request):
         data = json.loads(request.body)
         try:
-            nick_name = data["id"]
+            nick_name = data["nick_name"]
             if not validate_nick_name(nick_name):
                 return JsonResponse({'message':'INVALID_NICK_NAME'}, status = 400)
 
