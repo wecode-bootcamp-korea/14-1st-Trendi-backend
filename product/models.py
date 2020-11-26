@@ -14,11 +14,11 @@ class Product(core_models.TimeStampedModel):
     sub_category    = models.ForeignKey('product.SubCategory', on_delete=models.CASCADE)
     size            = models.ManyToManyField('product.Size', through = "ProductSize", related_name='sizes')
     color           = models.ManyToManyField('product.Color', through = "ProductColor", related_name='colors')
-    trendi_pick     = models.BooleanField(default=False)
-
+    trendi_pick     = models.BooleanField(null=True)
+    
     class Meta:
         db_table = 'products'
-
+    
     def __str__(self):
         return self.title
 
@@ -36,7 +36,7 @@ class Sale(models.Model):
         db_table = 'sale_ratios'
     
     def __str__(self):
-        return str(self.sale_ratio)
+        return self.sale_ratio()
 
 class Delivery(models.Model):
     delivery_type = models.IntegerField()
