@@ -18,16 +18,7 @@ class OrderStatus(models.Model):
         db_table = 'status'
     
     def __str__(self):
-        return self.status
-
-class OrderStatus(models.Model):
-    status = models.IntegerField()
-
-    class Meta:
-        db_table = 'status'
-    
-    def __str__(self):
-        return self.status
+        return str(self.status)
 
 class OrderList(core_models.TimeStampedModel):
     quantity     = models.IntegerField(null=True)
