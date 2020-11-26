@@ -5,7 +5,7 @@ from django.views import View
 from django.http import JsonResponse
 
 from .models import Order, OrderList, OrderStatus
-from product.models import Product, Color, ProductColor, Size, ProductSize
+from product.models import Product
 from user.models import User
 from core.utils import login_decorator
 
@@ -70,25 +70,25 @@ class OrderListView(View):
     
     @login_decorator
     def get(self, request):
-        orderlists = Order.objects.filter(user=request.user, orderstatus_id=1).last().orderlist_set.select_related('product__seller', 'product__delivery','size','color').all()
-        orderlist_data = [{
-            "orderlist_id"    : orderlist.id,
-            "title"           : orderlist.product.title,
-            "quantity"        : orderlist.quantity,
-            "price"           : orderlist.product.price,
-            "delivery"        : orderlist.product.delivery.delivery_type,
-            "seller"          : orderlist.product.seller.name,
-            "thumb_image_url" : orderlist.product.thumb_image_url,
-            "created_at"      : orderlist.created_at,
-            "updated_at"      : orderlist.updated_at,
-            "size"            : orderlist.size.name if orderlist.size_id is not None else None,
-            "color"           : orderlist.color.name if orderlist.color_id is not None else None,
-            "delivery_fee"    : orderlist.order.delivery_fee,
-            "delivery_fee1"    : orderlist.order.delivery_fee,
-            "delivery_fee2"    : orderlist.order.delivery_fee,
-            "delivery_fee3"    : orderlist.order.delivery_fee
-        } for orderlist in orderlists]
-        return JsonResponse({"data": orderlist_data}, status=200)
+        try:
+            orderlists = Order.objects.get(user=request.user, orderstatus_id=1).orderlist_set.select_related('product__seller', 'product__delivery','size','color').all()
+            orderlist_data = [{
+                "orderlist_id"    : orderlist.id,
+                "title"           : orderlist.product.title,
+                "quantity"        : orderlist.quantity,
+                "price"           : orderlist.product.price,
+                "delivery"        : orderlist.product.delivery.delivery_type,
+                "seller"          : orderlist.product.seller.name,
+                "thumb_image_url" : orderlist.product.thumb_image_url,
+                "created_at"      : orderlist.created_at,
+                "updated_at"      : orderlist.updated_at,
+                "size"            : orderlist.size.name if orderlist.size_id is not None else None,
+                "color"           : orderlist.color.name if orderlist.color_id is not None else None,
+                "delivery_fee"    : orderlist.order.delivery_fee
+            } for orderlist in orderlists]
+            return JsonResponse({"data": orderlist_data}, status=200)
+        except Order.DoesNotExist:
+            return JsonResponse({"message":"INVALID_ORDER"}, status=400)
 
     @login_decorator
     def delete(self, request, id):
@@ -119,7 +119,7 @@ class OrderListView(View):
         orderlist_id = id
         try:
             user = request.user
-            quantity= data["quantity"]
+            quantity = data["quantity"]
             orderlist_to_update = OrderList.objects.get(pk=orderlist_id)
             if orderlist_to_update.order.user != user:
                 return JsonResponse({"message":"INVALID_USER"}, status=400)
