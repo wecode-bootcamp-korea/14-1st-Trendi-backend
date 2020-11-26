@@ -316,3 +316,9 @@ user/migrations
 .idea/misc.xml
 .idea/modules.xml
 .idea/vcs.xml
+delete_all_data.py
+insert_data.py
+
+views-created.py
+
+queries_test.py
