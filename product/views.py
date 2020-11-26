@@ -77,7 +77,6 @@ class ProductListView(View):
                 products = products.order_by(sort_type[ordering])
             
             if search:
-                print(search)
                 products = Product.objects.select_related(
                     'seller', 'delivery', 'sale',
                 )
@@ -101,12 +100,10 @@ class ProductListView(View):
                 'price'           : product.price,
                 'updated_date'    : product.updated_at,
                 'product_pk'      : product.pk,
-                # 확인용 ============================================
                 'category'        : product.category.id,
                 'sub_category'    : product.sub_category.id,
                 'ordered_count'   : product.sum,
                 'review_count'    : product.review_count
-                # ==================================================
             } for product in products.filter(q)]
             
             number_of_products = products.filter(q).count()
@@ -146,6 +143,7 @@ class ProductDetailView(View):
             ]
             
             reviews = product.review_set.all().order_by('-updated_at')
+            
             avg_review_point = round(
                 sum([review.star for review in reviews]) / reviews.count()
             )
