@@ -14,11 +14,11 @@ class Product(core_models.TimeStampedModel):
     sub_category    = models.ForeignKey('product.SubCategory', on_delete=models.CASCADE)
     size            = models.ManyToManyField('product.Size', through = "ProductSize", related_name='sizes')
     color           = models.ManyToManyField('product.Color', through = "ProductColor", related_name='colors')
-    brandi_pick     = models.BooleanField(null=True)
+    trendi_pick     = models.BooleanField(null=True)
     
     class Meta:
         db_table = 'products'
-
+    
     def __str__(self):
         return self.title
 
@@ -44,9 +44,6 @@ class Delivery(models.Model):
     class Meta:
         db_table = 'deliveries'
 
-    def __str__(self):
-        return str(self.delivery_type)
-
 class Category(models.Model):
     name = models.CharField(max_length=50)
 
@@ -67,7 +64,7 @@ class SubCategory(models.Model):
         return self.name
 
 class Size(models.Model):
-    name = models.CharField(max_length=40)
+    name = models.CharField(max_length=40, null=True)
 
     class Meta:
         db_table = 'sizes'
@@ -83,7 +80,7 @@ class ProductSize(models.Model):
         db_table = 'products_sizes'
 
 class Color(models.Model):
-    name = models.CharField(max_length=40)
+    name = models.CharField(max_length=40, null=True)
 
     class Meta:
         db_table = 'colors'
