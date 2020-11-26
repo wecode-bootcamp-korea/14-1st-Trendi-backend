@@ -6,13 +6,14 @@ from django.http import JsonResponse
 from .models import Review
 from user.models import User
 from product.models import Product
+from core.utils import login_decorator
 
-class ReviewView(View):
+class ReviewCreateView(View):
+    @login_decorator
     def post(self, request):
         data=json.loads(request.body)
-
         try:
-            user             = User.objects.get(pk=data['user_id'])
+            user             = request.user
             product          = Product.objects.get(pk=data["product_id"])
             content          = data["content"].strip()
             image_url        = data.get("image_url")
@@ -35,11 +36,9 @@ class ReviewView(View):
         except KeyError:
             return JsonResponse({"message":"INVALID_KEYS"}, status=400)
 
+class ReviewView(View):
     def get(self, request, id):
-        product_id = id
-        reviews = Review.objects.filter(product=product_id)
-        #review_id 추가
-
+        reviews = Review.objects.select_related("user").filter(product=id).order_by("-updated_at")
         if not reviews.exists():
             return JsonResponse({"message":"INVALID_REVIEW"}, status=200)
 
@@ -52,16 +51,15 @@ class ReviewView(View):
             "product"         : review.product_id,
             "updated_at"      : str(review.updated_at),
             "user_information": review.user_information
-        } for review in reviews[::-1]]
+        } for review in reviews]
         return JsonResponse({"data": review_list}, status=200)
     
+    @login_decorator
     def delete(self, request, id):
-        review_id = id
-        user_id = int(request.GET['user_id'])
-
+        user_id = request.user.id
         try:
-            review_to_delete = Review.objects.get(pk=review_id)
-            if review_to_delete.user_id is not user_id:
+            review_to_delete = Review.objects.get(pk=id)
+            if review_to_delete.user.id is not user_id:
                 return JsonResponse({"message":"INVALID_USER"}, status=400)
             review_to_delete.delete()
             return JsonResponse({"message":"SUCCESS"}, status=200)
@@ -70,17 +68,16 @@ class ReviewView(View):
         except KeyError:
             return JsonResponse({"message":"INVALID_KEYS"}, status=400)
 
-    def patch(self, request,id):
+    @login_decorator
+    def patch(self, request, id):
         data = json.loads(request.body)
-        review_id = id
-
         try:
-            user_id          = data["user_id"]
+            user_id          = request.user.id
             content          = data["content"]
             user_information = data["user_information"]
             image_url        = data["image_url"]
             star             = data["star"]
-            review_to_update = Review.objects.get(pk=review_id)
+            review_to_update = Review.objects.get(pk=id)
 
             if review_to_update.user_id is not user_id:
                 return JsonResponse({"message":"INVALID_USER"}, status=400)
@@ -89,7 +86,7 @@ class ReviewView(View):
             review_to_update.star=star
             review_to_update.user_information=user_information
             review_to_update.save()
-            return JsonResponse({"message":"SUCCESS"}, status=200)            
+            return JsonResponse({"message":"SUCCESS"}, status=200)
         except Review.DoesNotExist:
             return JsonResponse({"message":"INVALID_REVIEW"}, status=400)
         except KeyError:

@@ -5,36 +5,39 @@ from django.views import View
 from django.http import JsonResponse
 
 from .models import Order, OrderList, OrderStatus
-from product.models import Product, Color, ProductColor, Size, ProductSize
+from product.models import Product
 from user.models import User
+from core.utils import login_decorator
 
-def delivery_fee_calculator(orderlists, current_order):
+def delivery_fee_calculator(orderlists):
     sum = 0
     for orderlist in orderlists:
         sum += orderlist.product.price*orderlist.quantity
     if sum > 50000:
-        current_order.delivery_fee = 0
-        current_order.save()
+        orderlist.order.delivery_fee = 0
     else:
-        current_order.delivery_fee = 2500
-        current_order.save()
+        orderlist.order.delivery_fee = 2500
+    orderlist.order.save()
 
 class OrderListView(View):
+    @login_decorator
     def post(self, request):
         data = json.loads(request.body)
         try:
-            user     = User.objects.get(pk=data["user_id"])
-            quantity = data["quantity"]
+            user     = request.user
             product  = Product.objects.get(pk=data["product_id"])
-            color    = data.get("color",0)
-            size     = data.get("size",0)
-            order    = Order.objects.filter(user_id=user_id, status_id=1)
-            
+            quantity = data["quantity"]
+            color_id = data.get("color_id",None)
+            size_id  = data.get("size_id",None)
+            order    = Order.objects.filter(user=user, orderstatus_id=1)
+
+            if quantity < 1:
+                return JsonResponse({"message":"INVALID_QUANTITY"},status=400)
             if not order.exists():
                 created_order = Order.objects.create(
-                    user         = user,
-                    status_id    = 1
-            )
+                    user           = user,
+                    orderstatus_id = 1
+                )
                 year          = str(created_order.updated_at.year)
                 month         = str(created_order.updated_at.month)
                 day           = str(created_order.updated_at.day)
@@ -44,22 +47,19 @@ class OrderListView(View):
                 created_order.save()
 
             current_order = order.last()
-            existing_orderlist = OrderList.objects.filter(product=product, order=current_order, color=color, size=size)
-            if existing_orderlist.exists():
-                existing_orderlist.update(quantity=existing_orderlist.first().quantity + quantity)
-                existing_orderlist.first().save()
-            else:
-                OrderList.objects.create(
-                    quantity = quantity,
-                    product  = product,
-                    order    = current_order,
-                    color    = color,
-                    size     = size
-                )
-            orderlists = current_order.orderlist_set.all()
-            print("------orderlists-------",orderlists)
-            delivery_fee_calculator(orderlists, current_order)
+            orderlist, created = OrderList.objects.get_or_create(
+                product=product,
+                order=current_order,
+                color_id=color_id,
+                size_id=size_id
+            )
+            if created:
+                orderlist.quantity = 0
+            orderlist.quantity += quantity
+            orderlist.save()
 
+            orderlists = current_order.orderlist_set.all()
+            delivery_fee_calculator(orderlists)
             return JsonResponse({"message":"SUCCESS"}, status=201)
         except Product.DoesNotExist:
             return JsonResponse({"message":"INVALID_PRODUCT"}, status=400)
@@ -68,12 +68,10 @@ class OrderListView(View):
         except KeyError:
             return JsonResponse({"message":"INVALID_KEYS"}, status=400)
     
-    def get(self, request, id):
-        user_id = id
-        user = User.objects.get(pk=user_id)
+    @login_decorator
+    def get(self, request):
         try:
-            order = Order.objects.get(user=user, status_id=1)
-            orderlists = OrderList.objects.filter(order=order)
+            orderlists = Order.objects.get(user=request.user, orderstatus_id=1).orderlist_set.select_related('product__seller', 'product__delivery','size','color').all()
             orderlist_data = [{
                 "orderlist_id"    : orderlist.id,
                 "title"           : orderlist.product.title,
@@ -84,44 +82,45 @@ class OrderListView(View):
                 "thumb_image_url" : orderlist.product.thumb_image_url,
                 "created_at"      : orderlist.created_at,
                 "updated_at"      : orderlist.updated_at,
-                "size"            : orderlist.product.productsize_set.get(size_id=orderlist.size).size.name if orderlist.size != 0 else None,
-                "color"           : orderlist.product.productcolor_set.get(color_id=orderlist.color).color.name if orderlist.color != 0 else None
+                "size"            : orderlist.size.name if orderlist.size_id is not None else None,
+                "color"           : orderlist.color.name if orderlist.color_id is not None else None,
+                "delivery_fee"    : orderlist.order.delivery_fee
             } for orderlist in orderlists]
             return JsonResponse({"data": orderlist_data}, status=200)
-        except OrderList.DoesNotExist:
-            return JsonResponse({"message":"INVALID_ORDERLIST"}, status=400)
-    
+        except Order.DoesNotExist:
+            return JsonResponse({"message":"INVALID_ORDER"}, status=400)
+
+class OrderListUpdateView(View):
+    @login_decorator
     def delete(self, request, id):
         try:
-            user = request.GET["user_id"]
-            orderlist_id = id
-            
-            user = User.objects.get(pk=user)
-            orderlist_to_delete = OrderList.objects.get(pk=orderlist_id)
-
-            if orderlist_to_delete.order.user != user:
+            user = request.user
+            orderlist = OrderList.objects.get(pk=id)
+            if orderlist.order.user != user:
                 return JsonResponse({"message":"INVALID_USER"}, status=400)
 
-            deleted_order_number = orderlist_to_delete.order.id
-            orderlist_to_delete.delete()
-            if not OrderList.objects.filter(order_id=deleted_order_number).exists():
+            deleted_order_number = orderlist.order.id
+            orderlist.delete()
+
+            orderlists = OrderList.objects.select_related('product').filter(order_id=deleted_order_number)
+            if orderlists.exists():
+                delivery_fee_calculator(orderlists)
+            else:
                 Order.objects.get(pk=deleted_order_number).delete()
-            
-            order = Order.objects.get(user=user, status_id=1)
-            orderlists = order.orderlist_set.all()
-            delivery_fee_calculator(orderlists, order)
+
             return JsonResponse({"message":"SUCCESS"}, status=200)
         except OrderList.DoesNotExist:
             return JsonResponse({"message":"INVALID_ORDERLIST"}, status=400)
         except KeyError:
             return JsonResponse({"message":"INVALID_KEYS"}, status=400)
     
+    @login_decorator
     def patch(self, request, id):
         data = json.loads(request.body)
         orderlist_id = id
         try:
-            user = User.objects.get(pk=data["user_id"])
-            quantity= data["quantity"]
+            user = request.user
+            quantity = data["quantity"]
             orderlist_to_update = OrderList.objects.get(pk=orderlist_id)
             if orderlist_to_update.order.user != user:
                 return JsonResponse({"message":"INVALID_USER"}, status=400)
@@ -130,15 +129,10 @@ class OrderListView(View):
             orderlist_to_update.quantity = quantity
             orderlist_to_update.save()
 
-            order = Order.objects.get(user=user, status=1)
-            orderlists = order.orderlist_set.all()
-            delivery_fee_calculator(orderlists, order)
+            orderlists = Order.objects.filter(user=user, orderstatus_id=1).last().orderlist_set.select_related('product').all()
+            delivery_fee_calculator(orderlists)
             return JsonResponse({"message":"SUCCESS"}, status=200)
         except OrderList.DoesNotExist:
             return JsonResponse({"message":"INVALID_ORDERLIST"}, status=400)
         except KeyError:
             return JsonResponse({"message":"INVALID_KEYS"}, status=400)
-
-class OrderView(View):
-
-    pass

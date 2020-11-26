@@ -296,3 +296,10 @@ order/migrations
 product/migrations
 review/migrations
 user/migrations
+
+delete_all_data.py
+insert_data.py
+
+views-created.py
+
+queries_test.py
