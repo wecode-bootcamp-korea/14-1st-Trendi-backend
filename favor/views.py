@@ -49,7 +49,7 @@ class ProductFavorView(View):
             'sale'             : str(int(result.product.sale.sale_ratio * 100)) + '%'
             } for result in results]
 
-        number_of_products = ProductFavor.objects.filter(user=user_id).count()
+        number_of_products = results.count()
 
         return JsonResponse({'number of products': number_of_products,'results': result_lists}, status = 200)
 
