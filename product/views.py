@@ -4,8 +4,11 @@ from django.db.models import Sum, Q, Count, OuterRef, Subquery
 from django.views     import View
 from django.http      import JsonResponse
 
+from core.utils       import login_decorator
 from product.models   import Product
 from review.models    import Review
+from favor.models     import ProductFavor
+from user.models      import User
 
 class ProductListView(View):
     
@@ -128,7 +131,6 @@ class ProductListView(View):
         )
 
 class ProductDetailView(View):
-
     def get(self, request, product_id):
         try:
             if not isinstance(product_id, int):
@@ -189,6 +191,81 @@ class ProductDetailView(View):
         except Product.DoesNotExist:
             return JsonResponse({"message": "NOT_EXIST_PRODUCT"}, status=400)
             
+        return JsonResponse({"product_detail": product_detail}, status=200)
+
+class PrivateProductDetailView(View):
+    @login_decorator
+    def get(self, request, product_id):
+        try:
+            if not isinstance(product_id, int):
+                raise TypeError
+            
+            user = request.user
+            
+            product = Product.objects.get(id=product_id)
+            
+            product_detail_images = product.productdetailimage_set.all()
+            
+            detail_images = [
+                images.detail_image_url for images in product_detail_images
+            ]
+            
+            reviews = product.review_set.all().order_by('-updated_at')
+            
+            avg_review_point = round(
+                sum([review.star for review in reviews]) / reviews.count()
+            )
+            
+            colors = [color.color.name
+                      for color in product.productcolor_set.all()]
+            sizes = [size.size.name
+                     for size in product.productsize_set.all()]
+            
+            favor = None
+            if ProductFavor.objects.filter(
+                user=user.id, product=product).exists():
+                favor = ProductFavor.objects.get(
+                            user    = user.id,
+                            product = product
+                        )
+            
+            product_detail = {
+                'image_url'         : product.thumb_image_url,
+                'detail_image_list' : detail_images,
+                'seller_name'       : product.seller.name,
+                'title'             : product.title,
+                'sale'              : convert_sale(product.sale.sale_ratio),
+                'price'             : product.price,
+                'discounted_price'  : get_discounted_price(
+                    product.price,
+                    product.sale.sale_ratio
+                ),
+                'total_review_count': reviews.count(),
+                'review_avg'        : avg_review_point,
+                'color_list'        : colors,
+                'size_list'         : sizes,
+                'delivery'          : product.delivery.delivery_type != 0,
+                'description'       : product.description,
+                'product_pk'        : product.pk,
+                'product_favor'     : True if favor.pk else False,
+                'review_info'       : [{
+                    'star'            : review.star,
+                    'user_name'       : review.user.user_name,
+                    'updated_at'      : review.updated_at,
+                    'user_information': review.user_information,
+                    'content'         : review.content,
+                    'photo_review'    : review.image_url,
+                    'product_pk'      : review.product.pk,
+                    'review_pk'       : review.pk,
+                } for review in reviews]
+            }
+        
+        except TypeError:
+            return JsonResponse({"message": "TYPE_ERROR"}, status=400)
+        
+        except Product.DoesNotExist:
+            return JsonResponse({"message": "NOT_EXIST_PRODUCT"}, status=400)
+        
         return JsonResponse({"product_detail": product_detail}, status=200)
 
 def get_discounted_price(price, sale_ratio):
