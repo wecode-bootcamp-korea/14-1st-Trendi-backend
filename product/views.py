@@ -3,6 +3,7 @@ from datetime         import datetime, timedelta
 from django.db.models import Sum, Q, Count, OuterRef, Subquery
 from django.views     import View
 from django.http      import JsonResponse
+from django.db.models import Q
 
 from product.models   import Product
 from review.models    import Review
@@ -101,12 +102,6 @@ class ProductListView(View):
                 'price'           : product.price,
                 'updated_date'    : product.updated_at,
                 'product_pk'      : product.pk,
-                # 확인용 ============================================
-                'category'        : product.category.id,
-                'sub_category'    : product.sub_category.id,
-                'ordered_count'   : product.sum,
-                'review_count'    : product.review_count
-                # ==================================================
             } for product in products.filter(q)]
             
             number_of_products = products.filter(q).count()
@@ -121,7 +116,7 @@ class ProductListView(View):
             return JsonResponse({"message": "NOT_EXIST_PRODUCT"}, status=400)
         
         if not product_list:
-            return JsonResponse({"message": "NO_RESULT"})
+            return JsonResponse({"message": "NO_RESULT"}, status=400)
         
         return JsonResponse(
             {
