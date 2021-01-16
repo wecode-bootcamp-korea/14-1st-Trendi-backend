@@ -15,8 +15,19 @@ delete_all_data.py
 .DS_Store
 debug.log
 csv
-.idea
+.DS_Store
+.idea/
+*.xls;xlsx;csv
+14-trendi-data
 
+
+favor/migrations
+order/migrations
+product/migrations
+review/migrations
+user/migrations
+insert_data.py
+delete_all_data.py
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
@@ -298,9 +309,17 @@ product/migrations
 review/migrations
 user/migrations
 
+.idea/.gitignore
+.idea/14-1st-Trendi-backend.iml
+.idea/codeStyles/codeStyleConfig.xml
+.idea/dictionaries/vcne.xml
+.idea/encodings.xml
+.idea/inspectionProfiles/Project_Default.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
 delete_all_data.py
 insert_data.py
-
 views-created.py
-
 queries_test.py
