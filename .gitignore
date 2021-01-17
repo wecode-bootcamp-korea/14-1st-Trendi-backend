@@ -1,6 +1,22 @@
 # Created by https://www.toptal.com/developers/gitignore/api/vscode,sublimetext,vim,django,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=vscode,sublimetext,vim,django,python
 
+### Custom ###
+csv/
+
+my_settings.py
+insert_data.py
+delete_all_data.py
+views-created.py
+queries_test.py
+review/data.py
+
+.idea/
+
+.vscode
+.DS_Store
+
+
 ### Django ###
 *.log
 *.pot
@@ -10,21 +26,12 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media
-insert_data.py
-delete_all_data.py
-.DS_Store
-debug.log
-
-csv
-.DS_Store
 
 favor/migrations
 order/migrations
 product/migrations
 review/migrations
 user/migrations
-insert_data.py
-delete_all_data.py
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
@@ -288,24 +295,6 @@ tags
 
 # End of https://www.toptal.com/developers/gitignore/api/vscode,sublimetext,vim,django,python
 
-my_settings.py
-*.csv
-
-review/data.py
-
-data.py
-csv
-
-.vscode
-
-.DS_Store
-
-favor/migrations
-order/migrations
-product/migrations
-review/migrations
-user/migrations
-
 .idea/.gitignore
 .idea/14-1st-Trendi-backend.iml
 .idea/codeStyles/codeStyleConfig.xml
@@ -316,9 +305,3 @@ user/migrations
 .idea/misc.xml
 .idea/modules.xml
 .idea/vcs.xml
-delete_all_data.py
-insert_data.py
-
-views-created.py
-
-queries_test.py
